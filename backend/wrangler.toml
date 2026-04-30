@@ -1,0 +1,12 @@
+name = "petfeeder-api"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "petfeeder"
+database_id = "2e8db825-768e-49d8-b009-16331c11838a"
+
+[vars]
+FRONTEND_URL = "http://localhost:3000"

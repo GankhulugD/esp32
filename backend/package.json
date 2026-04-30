@@ -1,0 +1,24 @@
+{
+  "name": "petfeeder-api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply petfeeder --local",
+    "db:migrate:remote": "wrangler d1 migrations apply petfeeder --remote",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "drizzle-orm": "^0.44.0",
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "drizzle-kit": "^0.30.0",
+    "typescript": "^5",
+    "wrangler": "^3.95.0"
+  }
+}
