@@ -2,13 +2,32 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Sunset, Moon, Utensils, Trash2, MoreVertical } from "lucide-react";
-import { api, type Schedule } from "@/lib/api/client";
+import { Sun, Sunset, Moon, Utensils, Trash2 } from "lucide-react";
+import {
+  ref,
+  onValue,
+  push,
+  set,
+  update,
+  remove,
+  serverTimestamp,
+} from "firebase/database";
+import { db as firebaseDb } from "@/lib/firebase";
 import toast from "react-hot-toast";
 
 const PORTIONS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 const PORTION_LABELS: Record<number, string> = {
   0.25: "1/4", 0.5: "1/2", 0.75: "3/4", 1.0: "1", 1.25: "1¼", 1.5: "1½", 2.0: "2",
+};
+
+type Schedule = {
+  id: string;
+  hour: number;
+  minute: number;
+  portionCups: number;
+  label: string | null;
+  enabled: boolean;
+  createdAt: number;
 };
 
 function getTimeIcon(hour: number) {
@@ -23,6 +42,16 @@ function fmt(h: number, m: number) {
   return `${String(hh).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
+// ESP32 уншдаг flat list-ийг идэвхтэй schedule-уудаас дахин барина
+async function syncEsp32List(items: Schedule[]) {
+  const enabled = items.filter((s) => s.enabled);
+  const flat: Record<string, { hour: number; minute: number; cups: number }> = {};
+  enabled.forEach((s, i) => {
+    flat[`s${i}`] = { hour: s.hour, minute: s.minute, cups: s.portionCups };
+  });
+  await set(ref(firebaseDb, "feeder/schedules"), flat);
+}
+
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,22 +64,52 @@ export default function SchedulePage() {
   const [portion, setPortion] = useState(0.75);
   const [portionIdx, setPortionIdx] = useState(2);
 
+  // Firebase real-time subscribe
   useEffect(() => {
-    api.getSchedules()
-      .then(setSchedules)
-      .catch(() => toast.error("Failed to load schedules"))
-      .finally(() => setLoading(false));
+    const unsub = onValue(
+      ref(firebaseDb, "feeder/schedules_app"),
+      (snap) => {
+        const val = (snap.val() ?? {}) as Record<string, Omit<Schedule, "id">>;
+        const list: Schedule[] = Object.entries(val)
+          .map(([id, v]) => ({ id, ...v }))
+          .sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute));
+        setSchedules(list);
+        setLoading(false);
+      },
+      () => {
+        toast.error("Failed to load schedules");
+        setLoading(false);
+      },
+    );
+    return () => unsub();
   }, []);
 
   const addSchedule = async () => {
     const h24 = ampm === "PM" ? (hour % 12) + 12 : hour % 12;
     setSaving(true);
     try {
-      const label = h24 < 12 ? "Morning Meal" : h24 < 17 ? "Afternoon Snack" : "Evening Meal";
-      const created = await api.createSchedule({ hour: h24, minute, portionCups: portion, label });
-      setSchedules((prev) => [...prev, created].sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute)));
+      const label =
+        h24 < 12 ? "Morning Meal" : h24 < 17 ? "Afternoon Snack" : "Evening Meal";
+      const newRef = push(ref(firebaseDb, "feeder/schedules_app"));
+      const payload = {
+        hour: h24,
+        minute,
+        portionCups: portion,
+        label,
+        enabled: true,
+        createdAt: serverTimestamp() as unknown as number,
+      };
+      await set(newRef, payload);
+      // ESP32 list-ийг шууд шинэчил (optimistic local copy ашиглана)
+      const optimistic: Schedule = {
+        id: newRef.key!,
+        ...payload,
+        createdAt: Date.now(),
+      };
+      await syncEsp32List([...schedules, optimistic]);
       toast.success("Schedule added!");
-    } catch {
+    } catch (e) {
+      console.error(e);
       toast.error("Failed to add schedule");
     } finally {
       setSaving(false);
@@ -59,24 +118,28 @@ export default function SchedulePage() {
 
   const toggleSchedule = async (s: Schedule) => {
     try {
-      const updated = await api.updateSchedule(s.id, { enabled: !s.enabled });
-      setSchedules((prev) => prev.map((x) => (x.id === s.id ? updated : x)));
+      await update(ref(firebaseDb, `feeder/schedules_app/${s.id}`), {
+        enabled: !s.enabled,
+      });
+      const next = schedules.map((x) =>
+        x.id === s.id ? { ...x, enabled: !x.enabled } : x,
+      );
+      await syncEsp32List(next);
     } catch {
       toast.error("Failed to update");
     }
   };
 
-  const deleteSchedule = async (id: number) => {
+  const deleteSchedule = async (id: string) => {
     try {
-      await api.deleteSchedule(id);
-      setSchedules((prev) => prev.filter((x) => x.id !== id));
+      await remove(ref(firebaseDb, `feeder/schedules_app/${id}`));
+      const next = schedules.filter((x) => x.id !== id);
+      await syncEsp32List(next);
       toast.success("Deleted");
     } catch {
       toast.error("Failed to delete");
     }
   };
-
-  const sliderPct = (portionIdx / (PORTIONS.length - 1)) * 100;
 
   return (
     <div className="px-4 pt-6 space-y-5">

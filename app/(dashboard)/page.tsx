@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Bell, Utensils, Clock, Wifi, ChevronRight, Activity } from "lucide-react";
+import {
+  Bell,
+  Utensils,
+  Clock,
+  Wifi,
+  ChevronRight,
+  Activity,
+} from "lucide-react";
 import { ref, onValue, set } from "firebase/database";
 import { db as firebaseDb } from "@/lib/firebase";
 import { api } from "@/lib/api/client";
@@ -33,11 +40,23 @@ function CircleGauge({
       <div className="flex items-center justify-center">
         <div className="relative w-32 h-32">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r={r} fill="none" stroke="#f1f5f9" strokeWidth="10" />
             <circle
-              cx="60" cy="60" r={r} fill="none"
-              stroke={color} strokeWidth="10"
-              strokeDasharray={circ} strokeDashoffset={offset}
+              cx="60"
+              cy="60"
+              r={r}
+              fill="none"
+              stroke="#f1f5f9"
+              strokeWidth="10"
+            />
+            <circle
+              cx="60"
+              cy="60"
+              r={r}
+              fill="none"
+              stroke={color}
+              strokeWidth="10"
+              strokeDasharray={circ}
+              strokeDashoffset={offset}
               strokeLinecap="round"
               style={{ transition: "stroke-dashoffset 1s ease" }}
             />
@@ -59,7 +78,13 @@ export default function HomePage() {
   const [lastFed, setLastFed] = useState<string | null>(null);
   const [nextMeal, setNextMeal] = useState("5:00 PM");
   const [recentActivity, setRecentActivity] = useState<
-    { id: number; label: string; sub: string; amount: string; type: "feed" | "water" }[]
+    {
+      id: number;
+      label: string;
+      sub: string;
+      amount: string;
+      type: "feed" | "water";
+    }[]
   >([]);
 
   // Firebase real-time
@@ -85,26 +110,34 @@ export default function HomePage() {
 
   // Load recent history
   useEffect(() => {
-    api.getHistory(5).then((items) => {
-      setRecentActivity(
-        items.map((item) => ({
-          id: item.id,
-          label: item.triggeredBy === "manual" ? "Manual Feed" : "Scheduled Feed",
-          sub: new Date(item.createdAt * 1000).toLocaleDateString("en-US", {
-            month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-          }),
-          amount: `${item.portionCups * 240}g`,
-          type: "feed" as const,
-        }))
-      );
-      if (items[0]) {
-        setLastFed(
-          new Date(items[0].createdAt * 1000).toLocaleTimeString("en-US", {
-            hour: "2-digit", minute: "2-digit",
-          })
+    api
+      .getHistory(5)
+      .then((items) => {
+        setRecentActivity(
+          items.map((item) => ({
+            id: item.id,
+            label:
+              item.triggeredBy === "manual" ? "Manual Feed" : "Scheduled Feed",
+            sub: new Date(item.createdAt * 1000).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            amount: `${item.portionCups * 240}g`,
+            type: "feed" as const,
+          })),
         );
-      }
-    }).catch(() => {});
+        if (items[0]) {
+          setLastFed(
+            new Date(items[0].createdAt * 1000).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          );
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleFeed = async () => {
@@ -119,7 +152,8 @@ export default function HomePage() {
       api.feed(portionCups).catch(() => {});
 
       const now = new Date().toLocaleTimeString("en-US", {
-        hour: "2-digit", minute: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
       });
       setLastFed(now);
       toast.success(`Feeding ${portionCups} cup — ${runMs / 1000}s`);
@@ -157,8 +191,7 @@ export default function HomePage() {
       </div>
 
       <h1 className="text-3xl font-bold text-gray-800">
-        Luna is{" "}
-        <span className="text-blue-600">Happy</span>
+        Lucy is <span className="text-blue-600">Happy</span>
       </h1>
 
       {/* Feed Now button */}
@@ -187,7 +220,10 @@ export default function HomePage() {
       {/* Days left */}
       <div className="bg-white rounded-2xl px-5 py-3 shadow-sm border border-gray-100 flex items-center gap-2">
         <p className="text-xs text-gray-400">
-          Approx. <span className="font-semibold text-gray-600">{daysLeft} days left</span>
+          Approx.{" "}
+          <span className="font-semibold text-gray-600">
+            {daysLeft} days left
+          </span>
         </p>
       </div>
 
@@ -195,7 +231,9 @@ export default function HomePage() {
       <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100 flex items-center gap-3">
         <Clock size={18} className="text-gray-400" />
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-widest">NEXT MEAL</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest">
+            NEXT MEAL
+          </p>
           <p className="text-lg font-bold text-gray-800">{nextMeal}</p>
         </div>
       </div>
@@ -226,11 +264,15 @@ export default function HomePage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="font-semibold text-gray-800 text-sm">Recent Activity</p>
-          <button className="text-xs text-blue-500 font-medium">View History</button>
+          <button className="text-xs text-blue-500 font-medium">
+            View History
+          </button>
         </div>
         <div className="space-y-2">
           {recentActivity.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-4">No activity yet</p>
+            <p className="text-xs text-gray-400 text-center py-4">
+              No activity yet
+            </p>
           ) : (
             recentActivity.map((item) => (
               <div
@@ -241,10 +283,14 @@ export default function HomePage() {
                   <Utensils size={14} className="text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-700 truncate">{item.label}</p>
+                  <p className="text-xs font-semibold text-gray-700 truncate">
+                    {item.label}
+                  </p>
                   <p className="text-[10px] text-gray-400">{item.sub}</p>
                 </div>
-                <span className="text-xs font-bold text-gray-600">{item.amount}</span>
+                <span className="text-xs font-bold text-gray-600">
+                  {item.amount}
+                </span>
                 <ChevronRight size={14} className="text-gray-300" />
               </div>
             ))
