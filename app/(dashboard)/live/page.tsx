@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Utensils, Wifi, Clock, Cloud } from "lucide-react";
+import { RefreshCw, Utensils, Cloud } from "lucide-react";
 import { ref, onValue, set } from "firebase/database";
 import { db as firebaseDb } from "@/lib/firebase";
 import { api } from "@/lib/api/client";
 import toast from "react-hot-toast";
+import { useLang } from "@/lib/i18n";
 
 export default function LivePage() {
+  const { t } = useLang();
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [camIp, setCamIp] = useState<string | null>(null);
   const [feeding, setFeeding] = useState(false);
@@ -68,7 +70,7 @@ export default function LivePage() {
         if (url) setImageUrl(url + "?cb=" + Date.now());
       }, { onlyOnce: true });
     }, 300);
-    toast("Refreshing...", { icon: "🔄" });
+    toast(t.liveToastRefreshing, { icon: "🔄" });
   };
 
   const handleQuickFeed = async () => {
@@ -79,32 +81,32 @@ export default function LivePage() {
       await set(ref(firebaseDb, "feeder/command"), 1);
       await set(ref(firebaseDb, "feeder/portion_cups"), portionCups);
       api.feed(portionCups).catch(() => {});
-      toast.success(`Quick feed — ${portionCups} cup`);
+      toast.success(t.liveToastQuickFeed(portionCups));
       setTimeout(async () => {
         await set(ref(firebaseDb, "feeder/command"), 0);
       }, portionCups * 1000 + 1000);
     } catch {
-      toast.error("Failed");
+      toast.error(t.liveToastFailed);
       setFeeding(false);
     }
   };
 
   const agoText = !updatedAt ? null
-    : secondsAgo < 60 ? `${secondsAgo}s ago`
-    : `${Math.floor(secondsAgo / 60)}min ago`;
+    : secondsAgo < 60 ? t.liveAgoSec(secondsAgo)
+    : t.liveAgoMin(Math.floor(secondsAgo / 60));
 
   return (
     <div className="px-4 pt-6 space-y-4">
       {/* Header */}
       <div>
-        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">KITCHEN / FEEDING STATION</p>
+        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">{t.liveKicker}</p>
         <div className="flex items-center justify-between mt-1">
-          <h1 className="text-2xl font-bold text-gray-800">Live Camera</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{t.liveTitle}</h1>
           <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold ${
             isOnline ? "bg-red-50 text-red-500" : "bg-gray-100 text-gray-400"
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-red-500 animate-pulse" : "bg-gray-400"}`} />
-            {isOnline ? "LIVE • 1080P" : "OFFLINE"}
+            {isOnline ? t.liveBadgeOn : t.liveBadgeOff}
           </div>
         </div>
       </div>
@@ -133,7 +135,7 @@ export default function LivePage() {
           ) : (
             <motion.div key="loading" className="absolute inset-0 flex flex-col items-center justify-center gap-3">
               <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-blue-400 animate-spin" />
-              <p className="text-white/50 text-xs">Waiting for camera...</p>
+              <p className="text-white/50 text-xs">{t.liveWaiting}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -151,7 +153,7 @@ export default function LivePage() {
           className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-white border border-gray-200 text-gray-600 font-semibold text-sm shadow-sm"
         >
           <RefreshCw size={16} />
-          REFRESH / RECONNECT
+          {t.liveRefresh}
         </button>
         <motion.button
           whileTap={{ scale: 0.96 }}
@@ -162,13 +164,13 @@ export default function LivePage() {
           }`}
         >
           <Utensils size={16} />
-          {feeding ? "FEEDING..." : "QUICK FEED"}
+          {feeding ? t.liveFeeding : t.liveQuickFeed}
         </motion.button>
       </div>
 
       {/* Device Health */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-        <p className="font-semibold text-gray-800 text-sm">Device Health</p>
+        <p className="font-semibold text-gray-800 text-sm">{t.deviceHealth}</p>
         <div className="grid grid-cols-2 gap-4">
           {/* Storage gauge */}
           <div className="flex flex-col items-center gap-2">
@@ -188,18 +190,18 @@ export default function LivePage() {
                 <span className="text-sm font-bold text-gray-800">{storageUsed}%</span>
               </div>
             </div>
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider">STORAGE</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider">{t.liveStorage}</p>
           </div>
 
           <div className="flex flex-col justify-center gap-3">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="text-xs text-gray-600">Wi-Fi Signal: Strong</span>
+              <span className="text-xs text-gray-600">{t.liveWifiSignal(t.wifiStrong)}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-blue-500" />
               <span className="text-xs text-gray-600">
-                Latency: {latency !== null ? `${latency}ms` : "—"}
+                {t.liveLatency(latency)}
               </span>
             </div>
           </div>
@@ -211,8 +213,8 @@ export default function LivePage() {
         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
           <Cloud size={22} className="text-blue-400" />
         </div>
-        <p className="font-semibold text-gray-700 text-sm">Cloud Active</p>
-        <p className="text-xs text-gray-400 text-center">Events are being recorded to your timeline</p>
+        <p className="font-semibold text-gray-700 text-sm">{t.liveCloudActive}</p>
+        <p className="text-xs text-gray-400 text-center">{t.liveCloudSub}</p>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
 } from "firebase/database";
 import { db as firebaseDb } from "@/lib/firebase";
 import toast from "react-hot-toast";
+import { useLang } from "@/lib/i18n";
 
 const PORTIONS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 const PORTION_LABELS: Record<number, string> = {
@@ -53,6 +54,7 @@ async function syncEsp32List(items: Schedule[]) {
 }
 
 export default function SchedulePage() {
+  const { t } = useLang();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,12 +79,12 @@ export default function SchedulePage() {
         setLoading(false);
       },
       () => {
-        toast.error("Failed to load schedules");
+        toast.error(t.schedToastLoadFail);
         setLoading(false);
       },
     );
     return () => unsub();
-  }, []);
+  }, [t]);
 
   const addSchedule = async () => {
     const h24 = ampm === "PM" ? (hour % 12) + 12 : hour % 12;
@@ -107,10 +109,10 @@ export default function SchedulePage() {
         createdAt: Date.now(),
       };
       await syncEsp32List([...schedules, optimistic]);
-      toast.success("Schedule added!");
+      toast.success(t.schedToastAdded);
     } catch (e) {
       console.error(e);
-      toast.error("Failed to add schedule");
+      toast.error(t.schedToastAddFail);
     } finally {
       setSaving(false);
     }
@@ -126,7 +128,7 @@ export default function SchedulePage() {
       );
       await syncEsp32List(next);
     } catch {
-      toast.error("Failed to update");
+      toast.error(t.schedToastUpdateFail);
     }
   };
 
@@ -135,9 +137,9 @@ export default function SchedulePage() {
       await remove(ref(firebaseDb, `feeder/schedules_app/${id}`));
       const next = schedules.filter((x) => x.id !== id);
       await syncEsp32List(next);
-      toast.success("Deleted");
+      toast.success(t.schedToastDeleted);
     } catch {
-      toast.error("Failed to delete");
+      toast.error(t.schedToastDeleteFail);
     }
   };
 
@@ -145,21 +147,21 @@ export default function SchedulePage() {
     <div className="px-4 pt-6 space-y-5">
       {/* Header */}
       <div>
-        <p className="text-[10px] text-blue-500 uppercase tracking-widest font-bold">PET NUTRITION</p>
-        <h1 className="text-2xl font-bold text-gray-800 mt-1">Feeder Schedule</h1>
+        <p className="text-[10px] text-blue-500 uppercase tracking-widest font-bold">{t.schedKicker}</p>
+        <h1 className="text-2xl font-bold text-gray-800 mt-1">{t.schedTitle}</h1>
       </div>
 
       {/* Add schedule card */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-5">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-gray-700">Add Feeding</p>
+          <p className="text-sm font-semibold text-gray-700">{t.schedAddCard}</p>
           <Utensils size={16} className="text-gray-400" />
         </div>
 
         {/* Time picker */}
         <div className="flex items-center gap-3">
           <div className="flex-1">
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">HOUR</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">{t.schedHour}</p>
             <div className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-3">
               <button onClick={() => setHour((h) => h === 1 ? 12 : h - 1)} className="text-gray-400 text-lg w-6">−</button>
               <span className="text-2xl font-bold text-gray-800">{String(hour).padStart(2, "0")}</span>
@@ -170,7 +172,7 @@ export default function SchedulePage() {
           <span className="text-2xl font-bold text-gray-300 mt-5">:</span>
 
           <div className="flex-1">
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">MINUTES</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">{t.schedMinutes}</p>
             <div className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-3">
               <button onClick={() => setMinute((m) => (m - 5 + 60) % 60)} className="text-gray-400 text-lg w-6">−</button>
               <span className="text-2xl font-bold text-gray-800">{String(minute).padStart(2, "0")}</span>
@@ -196,8 +198,8 @@ export default function SchedulePage() {
         {/* Portion slider */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider">Portion Size</p>
-            <span className="text-sm font-bold text-gray-800">{PORTION_LABELS[portion]} cup</span>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider">{t.schedPortionSize}</p>
+            <span className="text-sm font-bold text-gray-800">{t.cupsLabel(PORTION_LABELS[portion])}</span>
           </div>
           <div className="relative">
             <div className="flex justify-between mb-1">
@@ -223,22 +225,22 @@ export default function SchedulePage() {
           disabled={saving}
           className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-sm disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Confirm Feeding Time"}
+          {saving ? t.schedSaving : t.schedConfirm}
         </button>
       </div>
 
       {/* Device status */}
       <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-blue-500" />
-        <span className="text-xs text-gray-600 font-medium">SmartFeeder Pro V2 • Online</span>
+        <span className="text-xs text-gray-600 font-medium">{t.schedDeviceLine}</span>
       </div>
 
       {/* Active schedules */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-gray-800">Active Schedules</p>
+          <p className="text-sm font-semibold text-gray-800">{t.schedActive}</p>
           <span className="text-xs text-blue-500 font-medium">
-            {schedules.filter((s) => s.enabled).length} Events Programmed
+            {t.schedEventsProgrammed(schedules.filter((s) => s.enabled).length)}
           </span>
         </div>
 
@@ -266,30 +268,36 @@ export default function SchedulePage() {
                     <div className="flex-1">
                       <p className="text-base font-bold text-gray-800">{fmt(s.hour, s.minute)}</p>
                       <p className="text-[11px] text-gray-400">
-                        {PORTION_LABELS[s.portionCups]} cup portion
+                        {t.schedCupPortion(PORTION_LABELS[s.portionCups])}
                       </p>
                     </div>
                     {/* Toggle */}
                     <button
                       onClick={() => toggleSchedule(s)}
-                      className={`relative w-11 h-6 rounded-full transition-colors ${
-                        s.enabled ? "bg-blue-500" : "bg-gray-200"
+                      role="switch"
+                      aria-checked={s.enabled}
+                      className={`relative shrink-0 w-11 h-6 rounded-full transition-colors duration-200 ${
+                        s.enabled ? "bg-blue-500" : "bg-gray-300"
                       }`}
                     >
                       <span
-                        className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                          s.enabled ? "translate-x-5" : "translate-x-0.5"
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ease-out ${
+                          s.enabled ? "translate-x-5" : "translate-x-0"
                         }`}
                       />
                     </button>
-                    <button onClick={() => deleteSchedule(s.id)} className="text-gray-300 hover:text-red-400 transition-colors">
+                    <button
+                      onClick={() => deleteSchedule(s.id)}
+                      aria-label="Delete schedule"
+                      className="shrink-0 p-1 text-gray-300 hover:text-red-400 transition-colors"
+                    >
                       <Trash2 size={14} />
                     </button>
                   </div>
                 </motion.div>
               ))}
               {schedules.length === 0 && (
-                <p className="text-xs text-gray-400 text-center py-8">No schedules yet. Add one above.</p>
+                <p className="text-xs text-gray-400 text-center py-8">{t.schedEmpty}</p>
               )}
             </div>
           </AnimatePresence>

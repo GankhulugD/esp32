@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, CalendarDays, Video, BarChart3 } from "lucide-react";
-
-const tabs = [
-  { href: "/", label: "HOME", Icon: Home },
-  { href: "/schedule", label: "SCHEDULE", Icon: CalendarDays },
-  { href: "/live", label: "LIVE", Icon: Video },
-  { href: "/trends", label: "TRENDS", Icon: BarChart3 },
-];
+import { useLang } from "@/lib/i18n";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { t } = useLang();
+
+  const tabs = [
+    { href: "/", label: t.navHome, Icon: Home },
+    { href: "/schedule", label: t.navSchedule, Icon: CalendarDays },
+    { href: "/live", label: t.navLive, Icon: Video },
+    { href: "/trends", label: t.navTrends, Icon: BarChart3 },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 safe-area-pb">
