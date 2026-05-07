@@ -65,10 +65,14 @@ export default function LivePage() {
   const handleRefresh = () => {
     setImageUrl(null);
     setTimeout(() => {
-      onValue(ref(firebaseDb, "feeder/frame_url"), (s) => {
-        const url = s.val();
-        if (url) setImageUrl(url + "?cb=" + Date.now());
-      }, { onlyOnce: true });
+      onValue(
+        ref(firebaseDb, "feeder/frame_url"),
+        (s) => {
+          const url = s.val();
+          if (url) setImageUrl(url + "?cb=" + Date.now());
+        },
+        { onlyOnce: true },
+      );
     }, 300);
     toast(t.liveToastRefreshing, { icon: "🔄" });
   };
@@ -85,30 +89,41 @@ export default function LivePage() {
         triggeredBy: "manual",
       });
       toast.success(t.liveToastQuickFeed(portionCups));
-      setTimeout(async () => {
-        await set(ref(firebaseDb, "feeder/command"), 0);
-      }, portionCups * 1000 + 1000);
+      setTimeout(
+        async () => {
+          await set(ref(firebaseDb, "feeder/command"), 0);
+        },
+        portionCups * 1000 + 1000,
+      );
     } catch {
       toast.error(t.liveToastFailed);
       setFeeding(false);
     }
   };
 
-  const agoText = !updatedAt ? null
-    : secondsAgo < 60 ? t.liveAgoSec(secondsAgo)
-    : t.liveAgoMin(Math.floor(secondsAgo / 60));
+  const agoText = !updatedAt
+    ? null
+    : secondsAgo < 60
+      ? t.liveAgoSec(secondsAgo)
+      : t.liveAgoMin(Math.floor(secondsAgo / 60));
 
   return (
     <div className="px-4 pt-6 space-y-4">
       {/* Header */}
       <div>
-        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">{t.liveKicker}</p>
+        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
+          {t.liveKicker}
+        </p>
         <div className="flex items-center justify-between mt-1">
           <h1 className="text-2xl font-bold text-gray-800">{t.liveTitle}</h1>
-          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold ${
-            isOnline ? "bg-red-50 text-red-500" : "bg-gray-100 text-gray-400"
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-red-500 animate-pulse" : "bg-gray-400"}`} />
+          <div
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold ${
+              isOnline ? "bg-red-50 text-red-500" : "bg-gray-100 text-gray-400"
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-red-500 animate-pulse" : "bg-gray-400"}`}
+            />
             {isOnline ? t.liveBadgeOn : t.liveBadgeOff}
           </div>
         </div>
@@ -118,15 +133,21 @@ export default function LivePage() {
       <div className="bg-gray-900 rounded-2xl overflow-hidden aspect-video relative shadow-xl">
         <AnimatePresence mode="wait">
           {imageUrl ? (
-            <motion.div key="img" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0">
+            <motion.div
+              key="img"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={imageUrl} alt="Live feed"
+                src={imageUrl}
+                alt="Live feed"
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-3 left-3 flex items-center gap-2">
                 <span className="bg-black/50 text-white text-[9px] font-mono px-2 py-0.5 rounded-full flex items-center gap-1">
-                  📷 FEEDER_CAM_01
+                  📷 FEEDER_CAM
                 </span>
               </div>
               {agoText && (
@@ -136,7 +157,10 @@ export default function LivePage() {
               )}
             </motion.div>
           ) : (
-            <motion.div key="loading" className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+            <motion.div
+              key="loading"
+              className="absolute inset-0 flex flex-col items-center justify-center gap-3"
+            >
               <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-brand-mid animate-spin" />
               <p className="text-white/50 text-xs">{t.liveWaiting}</p>
             </motion.div>
@@ -163,7 +187,9 @@ export default function LivePage() {
           onClick={handleQuickFeed}
           disabled={feeding}
           className={`flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm ${
-            feeding ? "bg-brand-light text-white" : "bg-brand text-white shadow-[0_8px_28px_rgba(255,193,0,0.45)]"
+            feeding
+              ? "bg-brand-light text-white"
+              : "bg-brand text-white shadow-[0_8px_28px_rgba(255,193,0,0.45)]"
           }`}
         >
           <Utensils size={16} />
@@ -179,10 +205,21 @@ export default function LivePage() {
           <div className="flex flex-col items-center gap-2">
             <div className="relative w-20 h-20">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
-                <circle cx="40" cy="40" r="32" fill="none" stroke="#f1f5f9" strokeWidth="8" />
                 <circle
-                  cx="40" cy="40" r="32" fill="none"
-                  stroke="#ffc100" strokeWidth="8"
+                  cx="40"
+                  cy="40"
+                  r="32"
+                  fill="none"
+                  stroke="#f1f5f9"
+                  strokeWidth="8"
+                />
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="32"
+                  fill="none"
+                  stroke="#ffc100"
+                  strokeWidth="8"
                   strokeDasharray={2 * Math.PI * 32}
                   strokeDashoffset={2 * Math.PI * 32 * (1 - storageUsed / 100)}
                   strokeLinecap="round"
@@ -190,16 +227,22 @@ export default function LivePage() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-gray-800">{storageUsed}%</span>
+                <span className="text-sm font-bold text-gray-800">
+                  {storageUsed}%
+                </span>
               </div>
             </div>
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider">{t.liveStorage}</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider">
+              {t.liveStorage}
+            </p>
           </div>
 
           <div className="flex flex-col justify-center gap-3">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-brand" />
-              <span className="text-xs text-gray-600">{t.liveWifiSignal(t.wifiStrong)}</span>
+              <span className="text-xs text-gray-600">
+                {t.liveWifiSignal(t.wifiStrong)}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-brand" />
@@ -216,7 +259,9 @@ export default function LivePage() {
         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
           <Cloud size={22} className="text-brand" />
         </div>
-        <p className="font-semibold text-gray-700 text-sm">{t.liveCloudActive}</p>
+        <p className="font-semibold text-gray-700 text-sm">
+          {t.liveCloudActive}
+        </p>
         <p className="text-xs text-gray-400 text-center">{t.liveCloudSub}</p>
       </div>
     </div>
