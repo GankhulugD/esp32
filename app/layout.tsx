@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f472b6",
+  themeColor: "#ffc100",
   width: "device-width",
   initialScale: 1,
 };
@@ -34,7 +34,7 @@ export default function RootLayout({
       lang="mn"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-gray-50">
+      <body className="min-h-full flex flex-col bg-brand-cream">
         <LanguageProvider>{children}</LanguageProvider>
         <Toaster
           position="top-center"
@@ -50,7 +50,7 @@ export default function RootLayout({
               fontFamily: "var(--font-geist-sans)",
             },
             success: {
-              iconTheme: { primary: "#f472b6", secondary: "#fff" },
+              iconTheme: { primary: "#ffc100", secondary: "#fff" },
             },
             error: {
               iconTheme: { primary: "#f87171", secondary: "#fff" },

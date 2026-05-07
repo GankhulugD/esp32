@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull, notInArray } from "drizzle-orm";
 import { createDb, feedingSchedules } from "../db";
 import { firebasePatch } from "../lib/firebase";
 
@@ -19,6 +19,89 @@ schedulesRoute.get("/", async (c) => {
     .from(feedingSchedules)
     .orderBy(feedingSchedules.hour, feedingSchedules.minute);
   return c.json(schedules);
+});
+
+type MirrorRow = {
+  firebaseKey: string;
+  hour: number;
+  minute: number;
+  portionCups: number;
+  label?: string | null;
+  enabled: boolean;
+  createdAt?: number;
+};
+
+/** Next.js schedule хуудасны `feeder/schedules_app`-ийг D1-д толь тусгах → ESP32 `feeder/schedules`-тай синк */
+schedulesRoute.post("/mirror", async (c) => {
+  const body = await c.req.json<{ schedules: MirrorRow[] }>();
+  const items = Array.isArray(body.schedules) ? body.schedules : [];
+
+  for (const it of items) {
+    const fk = typeof it.firebaseKey === "string" ? it.firebaseKey.trim() : "";
+    if (
+      fk.length === 0 ||
+      it.hour < 0 ||
+      it.hour > 23 ||
+      it.minute < 0 ||
+      it.minute > 59 ||
+      it.portionCups < 0.25 ||
+      it.portionCups > 2
+    ) {
+      return c.json({ error: "Invalid schedule row" }, 400);
+    }
+  }
+
+  const db = createDb(c.env.DB);
+  const keys = [...new Set(items.map((i) => i.firebaseKey.trim()))];
+
+  if (keys.length === 0) {
+    await db.delete(feedingSchedules).where(isNotNull(feedingSchedules.firebaseKey));
+  } else {
+    await db.delete(feedingSchedules).where(
+      and(
+        isNotNull(feedingSchedules.firebaseKey),
+        notInArray(feedingSchedules.firebaseKey, keys),
+      ),
+    );
+  }
+
+  const nowTs = Math.floor(Date.now() / 1000);
+
+  for (const it of items) {
+    const fk = it.firebaseKey.trim();
+    const created =
+      typeof it.createdAt === "number" &&
+      Number.isFinite(it.createdAt) &&
+      it.createdAt > 0
+        ? Math.floor(it.createdAt)
+        : nowTs;
+
+    await db
+      .insert(feedingSchedules)
+      .values({
+        firebaseKey: fk,
+        hour: it.hour,
+        minute: it.minute,
+        portionCups: it.portionCups,
+        label: it.label ?? null,
+        enabled: Boolean(it.enabled),
+        createdAt: created,
+      })
+      .onConflictDoUpdate({
+        target: feedingSchedules.firebaseKey,
+        set: {
+          hour: it.hour,
+          minute: it.minute,
+          portionCups: it.portionCups,
+          label: it.label ?? null,
+          enabled: Boolean(it.enabled),
+        },
+      });
+  }
+
+  await syncSchedulesToFirebase(db, c.env.FIREBASE_SECRET, c.env.FIREBASE_DB_URL);
+
+  return c.json({ ok: true, count: items.length });
 });
 
 // POST /api/schedules

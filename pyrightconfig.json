@@ -1,0 +1,8 @@
+{
+  "include": ["image_model"],
+  "exclude": ["image_model/.venv", "**/node_modules"],
+  "venvPath": "image_model",
+  "venv": ".venv",
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic"
+}

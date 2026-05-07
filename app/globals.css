@@ -1,13 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #1e293b;
+  --brand: #ffc100;
+  --brand-mid: #ffce34;
+  --brand-light: #ffd656;
+  --brand-soft: #ffebab;
+  --brand-cream: #fffcf1;
+  --brand-ink: #3d3310;
+  --background: var(--brand-cream);
+  --foreground: var(--brand-ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: #ffc100;
+  --color-brand-mid: #ffce34;
+  --color-brand-light: #ffd656;
+  --color-brand-soft: #ffebab;
+  --color-brand-cream: #fffcf1;
+  --color-brand-ink: #3d3310;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -20,8 +32,8 @@ body {
 
 /* Glass card utility */
 .glass {
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 252, 241, 0.45);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 235, 171, 0.6);
 }

@@ -32,9 +32,9 @@ type Schedule = {
 };
 
 function getTimeIcon(hour: number) {
-  if (hour >= 5 && hour < 12) return <Sun size={16} className="text-amber-500" />;
+  if (hour >= 5 && hour < 12) return <Sun size={16} className="text-brand" />;
   if (hour >= 12 && hour < 18) return <Sunset size={16} className="text-orange-400" />;
-  return <Moon size={16} className="text-indigo-400" />;
+  return <Moon size={16} className="text-stone-500" />;
 }
 
 function fmt(h: number, m: number) {
@@ -147,7 +147,7 @@ export default function SchedulePage() {
     <div className="px-4 pt-6 space-y-5">
       {/* Header */}
       <div>
-        <p className="text-[10px] text-blue-500 uppercase tracking-widest font-bold">{t.schedKicker}</p>
+        <p className="text-[10px] text-brand-ink uppercase tracking-widest font-bold">{t.schedKicker}</p>
         <h1 className="text-2xl font-bold text-gray-800 mt-1">{t.schedTitle}</h1>
       </div>
 
@@ -186,7 +186,7 @@ export default function SchedulePage() {
                 key={v}
                 onClick={() => setAmpm(v)}
                 className={`text-xs font-bold px-2 py-1 rounded-lg transition-colors ${
-                  ampm === v ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-400"
+                  ampm === v ? "bg-brand text-white" : "bg-gray-100 text-gray-400"
                 }`}
               >
                 {v}
@@ -215,7 +215,7 @@ export default function SchedulePage() {
                 setPortionIdx(i);
                 setPortion(PORTIONS[i]);
               }}
-              className="w-full accent-blue-600 h-2 cursor-pointer"
+              className="w-full accent-brand h-2 cursor-pointer"
             />
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function SchedulePage() {
         <button
           onClick={addSchedule}
           disabled={saving}
-          className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-sm disabled:opacity-50"
+          className="w-full py-3.5 bg-brand text-white rounded-xl font-semibold text-sm disabled:opacity-50 shadow-[0_6px_20px_rgba(255,193,0,0.35)]"
         >
           {saving ? t.schedSaving : t.schedConfirm}
         </button>
@@ -231,7 +231,7 @@ export default function SchedulePage() {
 
       {/* Device status */}
       <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-blue-500" />
+        <span className="w-2 h-2 rounded-full bg-brand" />
         <span className="text-xs text-gray-600 font-medium">{t.schedDeviceLine}</span>
       </div>
 
@@ -239,7 +239,7 @@ export default function SchedulePage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold text-gray-800">{t.schedActive}</p>
-          <span className="text-xs text-blue-500 font-medium">
+          <span className="text-xs text-brand-ink font-medium">
             {t.schedEventsProgrammed(schedules.filter((s) => s.enabled).length)}
           </span>
         </div>
@@ -277,7 +277,7 @@ export default function SchedulePage() {
                       role="switch"
                       aria-checked={s.enabled}
                       className={`relative shrink-0 w-11 h-6 rounded-full transition-colors duration-200 ${
-                        s.enabled ? "bg-blue-500" : "bg-gray-300"
+                        s.enabled ? "bg-brand-mid" : "bg-gray-300"
                       }`}
                     >
                       <span

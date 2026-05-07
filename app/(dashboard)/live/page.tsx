@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Utensils, Cloud } from "lucide-react";
 import { ref, onValue, set } from "firebase/database";
 import { db as firebaseDb } from "@/lib/firebase";
-import { api } from "@/lib/api/client";
+import { pushFeedingHistoryEntry } from "@/lib/feederHistory";
 import toast from "react-hot-toast";
 import { useLang } from "@/lib/i18n";
 
@@ -80,7 +80,10 @@ export default function LivePage() {
       const portionCups = 0.5;
       await set(ref(firebaseDb, "feeder/command"), 1);
       await set(ref(firebaseDb, "feeder/portion_cups"), portionCups);
-      api.feed(portionCups).catch(() => {});
+      await pushFeedingHistoryEntry(firebaseDb, {
+        portionCups,
+        triggeredBy: "manual",
+      });
       toast.success(t.liveToastQuickFeed(portionCups));
       setTimeout(async () => {
         await set(ref(firebaseDb, "feeder/command"), 0);
@@ -134,7 +137,7 @@ export default function LivePage() {
             </motion.div>
           ) : (
             <motion.div key="loading" className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-              <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-blue-400 animate-spin" />
+              <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-brand-mid animate-spin" />
               <p className="text-white/50 text-xs">{t.liveWaiting}</p>
             </motion.div>
           )}
@@ -160,7 +163,7 @@ export default function LivePage() {
           onClick={handleQuickFeed}
           disabled={feeding}
           className={`flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm ${
-            feeding ? "bg-blue-300 text-white" : "bg-blue-600 text-white shadow-lg shadow-blue-200"
+            feeding ? "bg-brand-light text-white" : "bg-brand text-white shadow-[0_8px_28px_rgba(255,193,0,0.45)]"
           }`}
         >
           <Utensils size={16} />
@@ -179,7 +182,7 @@ export default function LivePage() {
                 <circle cx="40" cy="40" r="32" fill="none" stroke="#f1f5f9" strokeWidth="8" />
                 <circle
                   cx="40" cy="40" r="32" fill="none"
-                  stroke="#2563eb" strokeWidth="8"
+                  stroke="#ffc100" strokeWidth="8"
                   strokeDasharray={2 * Math.PI * 32}
                   strokeDashoffset={2 * Math.PI * 32 * (1 - storageUsed / 100)}
                   strokeLinecap="round"
@@ -195,11 +198,11 @@ export default function LivePage() {
 
           <div className="flex flex-col justify-center gap-3">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="w-2 h-2 rounded-full bg-brand" />
               <span className="text-xs text-gray-600">{t.liveWifiSignal(t.wifiStrong)}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="w-2 h-2 rounded-full bg-brand" />
               <span className="text-xs text-gray-600">
                 {t.liveLatency(latency)}
               </span>
@@ -211,7 +214,7 @@ export default function LivePage() {
       {/* Cloud status */}
       <div className="bg-gray-100 rounded-2xl p-5 flex flex-col items-center gap-2">
         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-          <Cloud size={22} className="text-blue-400" />
+          <Cloud size={22} className="text-brand" />
         </div>
         <p className="font-semibold text-gray-700 text-sm">{t.liveCloudActive}</p>
         <p className="text-xs text-gray-400 text-center">{t.liveCloudSub}</p>

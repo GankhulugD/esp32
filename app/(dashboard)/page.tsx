@@ -13,7 +13,10 @@ import {
 import Image from "next/image";
 import { ref, onValue, set } from "firebase/database";
 import { db as firebaseDb } from "@/lib/firebase";
-import { api } from "@/lib/api/client";
+import {
+  parseFeedingHistory,
+  pushFeedingHistoryEntry,
+} from "@/lib/feederHistory";
 import toast from "react-hot-toast";
 import { useLang } from "@/lib/i18n";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -85,7 +88,7 @@ export default function HomePage() {
   const [nextMeal] = useState("5:00 PM");
   const [recentActivity, setRecentActivity] = useState<
     {
-      id: number;
+      id: string;
       label: string;
       sub: string;
       amount: string;
@@ -114,36 +117,39 @@ export default function HomePage() {
     return () => unsubs.forEach((u) => u());
   }, []);
 
-  // Load recent history
+  // Firebase түүх
   useEffect(() => {
-    api
-      .getHistory(5)
-      .then((items) => {
-        setRecentActivity(
-          items.map((item) => ({
-            id: item.id,
-            label:
-              item.triggeredBy === "manual" ? t.manualFeed : t.scheduledFeed,
-            sub: new Date(item.createdAt * 1000).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            amount: `${item.portionCups * 240}g`,
-            type: "feed" as const,
-          })),
+    const u = onValue(ref(firebaseDb, "feeder/history"), (snap) => {
+      const items = parseFeedingHistory(snap.val() as Record<string, unknown> | null)
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 5);
+
+      setRecentActivity(
+        items.map((item) => ({
+          id: item.id,
+          label:
+            item.triggeredBy === "manual" ? t.manualFeed : t.scheduledFeed,
+          sub: new Date(item.createdAt * 1000).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          amount: `${item.portionCups * 240}g`,
+          type: "feed" as const,
+        })),
+      );
+      const first = items[0];
+      if (first) {
+        setLastFed(
+          new Date(first.createdAt * 1000).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
         );
-        if (items[0]) {
-          setLastFed(
-            new Date(items[0].createdAt * 1000).toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          );
-        }
-      })
-      .catch(() => {});
+      }
+    });
+    return () => u();
   }, [t]);
 
   const handleFeed = async () => {
@@ -155,7 +161,10 @@ export default function HomePage() {
 
       await set(ref(firebaseDb, "feeder/command"), 1);
       await set(ref(firebaseDb, "feeder/portion_cups"), portionCups);
-      api.feed(portionCups).catch(() => {});
+      await pushFeedingHistoryEntry(firebaseDb, {
+        portionCups,
+        triggeredBy: "manual",
+      });
 
       const now = new Date().toLocaleTimeString("en-US", {
         hour: "2-digit",
@@ -205,7 +214,7 @@ export default function HomePage() {
       </div>
 
       <h1 className="text-3xl font-bold text-gray-800">
-        {t.petName} <span className="text-blue-600">{t.petStatus}</span>
+        {t.petName} <span className="text-brand-ink">{t.petStatus}</span>
       </h1>
 
       {/* Feed Now button */}
@@ -215,8 +224,8 @@ export default function HomePage() {
         disabled={feeding}
         className={`w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-colors ${
           feeding
-            ? "bg-blue-300 text-white cursor-not-allowed"
-            : "bg-blue-600 text-white shadow-lg shadow-blue-200"
+            ? "bg-brand-light text-white cursor-not-allowed"
+            : "bg-brand text-white shadow-[0_8px_28px_rgba(255,193,0,0.45)]"
         }`}
       >
         <Utensils size={18} />
@@ -226,7 +235,7 @@ export default function HomePage() {
       {/* Food Level */}
       <CircleGauge
         value={foodLevel}
-        color="#2563eb"
+        color="#ffc100"
         label={t.foodLevel}
         sublabel={t.foodLevelSub}
         remainingLabel={t.remaining}
@@ -253,22 +262,22 @@ export default function HomePage() {
       </div>
 
       {/* Device Health */}
-      <div className="bg-blue-600 rounded-2xl p-5 text-white space-y-3">
+      <div className="bg-brand rounded-2xl p-5 text-white space-y-3">
         <p className="font-semibold text-sm">{t.deviceHealth}</p>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Wifi size={14} className="text-blue-200" />
-            <span className="text-xs text-blue-100">{t.wifiStrength}</span>
+            <Wifi size={14} className="text-brand-cream/90" />
+            <span className="text-xs text-brand-cream/95">{t.wifiStrength}</span>
           </div>
           <span className="text-xs font-semibold">{t.wifiStrong}</span>
         </div>
-        <div className="w-full bg-blue-500 rounded-full h-1.5">
+        <div className="w-full bg-brand-mid rounded-full h-1.5">
           <div className="bg-white h-1.5 rounded-full w-4/5" />
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Activity size={14} className="text-blue-200" />
-            <span className="text-xs text-blue-100">{t.firmware}</span>
+            <Activity size={14} className="text-brand-cream/90" />
+            <span className="text-xs text-brand-cream/95">{t.firmware}</span>
           </div>
           <span className="text-xs font-semibold">v2.4.1</span>
         </div>
@@ -280,7 +289,7 @@ export default function HomePage() {
           <p className="font-semibold text-gray-800 text-sm">
             {t.recentActivity}
           </p>
-          <button className="text-xs text-blue-500 font-medium">
+          <button className="text-xs text-brand-ink font-medium">
             {t.viewHistory}
           </button>
         </div>

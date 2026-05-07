@@ -25,7 +25,7 @@ export function LanguageSwitch() {
           onClick={() => setLang(v)}
           aria-pressed={lang === v}
           className={`relative z-10 w-9 h-7 text-[10px] font-bold tracking-wider transition-colors ${
-            lang === v ? "text-blue-600" : "text-gray-400"
+            lang === v ? "text-brand-ink" : "text-gray-400"
           }`}
         >
           {v.toUpperCase()}

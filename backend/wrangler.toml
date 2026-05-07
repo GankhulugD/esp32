@@ -10,3 +10,9 @@ database_id = "2e8db825-768e-49d8-b009-16331c11838a"
 
 [vars]
 FRONTEND_URL = "http://localhost:3000"
+
+# 5 мин тутамд (UTC): feeder snapshot → sensor_readings
+[triggers]
+crons = ["*/5 * * * *"]
+
+# .dev.vars болон wrangler secret-д: FIREBASE_DB_URL, FIREBASE_SECRET

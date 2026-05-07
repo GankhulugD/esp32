@@ -11,19 +11,22 @@ export const deviceRoute = new Hono<{ Bindings: Env }>();
 
 // GET /api/device/status  — Firebase-с live status авах
 deviceRoute.get("/status", async (c) => {
-  const data = await firebaseGet(
+  const raw = await firebaseGet(
     "feeder",
     c.env.FIREBASE_SECRET,
     c.env.FIREBASE_DB_URL
   );
+  const data = raw as Record<string, unknown> | null;
 
   return c.json({
-    foodLevel: data?.food_level ?? null,
+    foodLevel: typeof data?.food_level === "number" ? data.food_level : null,
     waterPump: !!data?.water_pump,
     feeding: data?.command === 1,
-    lastImageUrl: data?.frame_url ?? null,
-    camIp: data?.cam_ip ?? null,
-    updatedAt: data?.updated_at ?? null,
+    lastImageUrl:
+      typeof data?.frame_url === "string" ? data.frame_url : null,
+    camIp: typeof data?.cam_ip === "string" ? data.cam_ip : null,
+    updatedAt:
+      typeof data?.updated_at === "number" ? data.updated_at : null,
   });
 });
 

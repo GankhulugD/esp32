@@ -27,6 +27,7 @@ export type HistoryItem = {
   portionCups: number;
   triggeredBy: "schedule" | "manual";
   scheduleId: number | null;
+  scheduleFirebaseKey?: string | null;
   foodLevelBefore: number | null;
   foodLevelAfter: number | null;
   createdAt: number;
@@ -50,12 +51,6 @@ export type DeviceStatus = {
 };
 
 export const api = {
-  feed: (portionCups: number) =>
-    request<{ success: boolean; historyId: number }>("/api/feed", {
-      method: "POST",
-      body: JSON.stringify({ portionCups }),
-    }),
-
   getSchedules: () => request<Schedule[]>("/api/schedules"),
 
   createSchedule: (data: { hour: number; minute: number; portionCups: number; label?: string }) =>

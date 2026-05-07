@@ -1,6 +1,7 @@
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { createDb, feedingHistory } from "../db";
-import { firebaseSet, firebaseGet } from "../lib/firebase";
+import { createDb, feedingHistory, feedingSchedules } from "../db";
+import { firebaseGet, firebaseSet } from "../lib/firebase";
 
 type Env = {
   DB: D1Database;
@@ -10,48 +11,71 @@ type Env = {
 
 export const feedRoute = new Hono<{ Bindings: Env }>();
 
-// POST /api/feed  — гараар тэжээх
+// POST /api/feed — гараар тэжээх (эсвэл logOnly: зөвхөн D1 түүх; ScheduleRunner аль хэдийн Firebase команд илгээсэн үед)
 feedRoute.post("/", async (c) => {
-  const body = await c.req.json<{ portionCups?: number }>();
+  const body = await c.req.json<{
+    portionCups?: number;
+    triggeredBy?: "manual" | "schedule";
+    scheduleFirebaseKey?: string | null;
+    logOnly?: boolean;
+  }>();
   const portionCups = body.portionCups ?? 0.5;
+  const logOnly = body.logOnly === true;
+  const triggeredBy =
+    body.triggeredBy === "schedule" ? "schedule" : "manual";
 
   if (portionCups < 0.25 || portionCups > 2) {
     return c.json({ error: "portionCups must be between 0.25 and 2" }, 400);
   }
 
-  // Firebase-д команд илгээх
-  await firebaseSet(
-    "feeder/command",
-    1,
-    c.env.FIREBASE_SECRET,
-    c.env.FIREBASE_DB_URL
-  );
+  const db = createDb(c.env.DB);
 
-  // Portion хэмжээг Firebase-д хадгалах
-  await firebaseSet(
-    "feeder/portion_cups",
-    portionCups,
-    c.env.FIREBASE_SECRET,
-    c.env.FIREBASE_DB_URL
-  );
+  if (!logOnly) {
+    await firebaseSet(
+      "feeder/command",
+      1,
+      c.env.FIREBASE_SECRET,
+      c.env.FIREBASE_DB_URL,
+    );
+    await firebaseSet(
+      "feeder/portion_cups",
+      portionCups,
+      c.env.FIREBASE_SECRET,
+      c.env.FIREBASE_DB_URL,
+    );
+  }
 
-  // Одоогийн хоолны түвшин авах
   const foodLevel = await firebaseGet(
     "feeder/food_level",
     c.env.FIREBASE_SECRET,
-    c.env.FIREBASE_DB_URL
+    c.env.FIREBASE_DB_URL,
   ).catch(() => null);
 
-  // D1-д лог хадгалах
-  const db = createDb(c.env.DB);
+  let scheduleIdNum: number | null = null;
+  if (triggeredBy === "schedule" && body.scheduleFirebaseKey) {
+    const [row] = await db
+      .select({ id: feedingSchedules.id })
+      .from(feedingSchedules)
+      .where(eq(feedingSchedules.firebaseKey, body.scheduleFirebaseKey))
+      .limit(1);
+    scheduleIdNum = row?.id ?? null;
+  }
+
   const [inserted] = await db
     .insert(feedingHistory)
     .values({
       portionCups,
-      triggeredBy: "manual",
+      triggeredBy,
+      scheduleId: scheduleIdNum,
+      scheduleFirebaseKey: body.scheduleFirebaseKey ?? null,
       foodLevelBefore: typeof foodLevel === "number" ? foodLevel : null,
     })
     .returning();
 
-  return c.json({ success: true, historyId: inserted.id, portionCups });
+  return c.json({
+    success: true,
+    historyId: inserted.id,
+    portionCups,
+    triggeredBy,
+  });
 });

@@ -112,6 +112,10 @@ type Dict = {
   dayShort: [string, string, string, string, string, string, string]; // Sun..Sat
   trendsToday: string;
   trendsYesterday: string;
+
+  trendsSchedBlock: string;
+  trendsSchedSub: string;
+  trendsSchedEmpty: string;
 };
 
 const en: Dict = {
@@ -211,6 +215,10 @@ const en: Dict = {
   dayShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
   trendsToday: "Today",
   trendsYesterday: "Yesterday",
+
+  trendsSchedBlock: "Planned schedules",
+  trendsSchedSub: "From Firebase schedules_app (cup size per slot)",
+  trendsSchedEmpty: "No schedules yet — add under Schedule.",
 };
 
 const mn: Dict = {
@@ -310,6 +318,10 @@ const mn: Dict = {
   dayShort: ["Ням", "Дав", "Мяг", "Лха", "Пүр", "Баа", "Бям"],
   trendsToday: "Өнөөдөр",
   trendsYesterday: "Өчигдөр",
+
+  trendsSchedBlock: "Тогтоосон цагууд",
+  trendsSchedSub: "Firebase schedules_app (нэг суудал тутамд хэдэн аяга)",
+  trendsSchedEmpty: "Цаг алга — Schedule цэсээс нэмнэ үү.",
 };
 
 const dicts: Record<Lang, Dict> = { en, mn };

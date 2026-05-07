@@ -29,14 +29,14 @@ export function BottomNav() {
             >
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                  active ? "bg-blue-600 text-white" : "text-gray-400"
+                  active ? "bg-brand text-white shadow-[0_4px_16px_rgba(255,193,0,0.4)]" : "text-gray-400"
                 }`}
               >
                 <Icon size={20} />
               </div>
               <span
                 className={`text-[9px] font-semibold tracking-widest ${
-                  active ? "text-blue-600" : "text-gray-400"
+                  active ? "text-brand-ink" : "text-gray-400"
                 }`}
               >
                 {label}
