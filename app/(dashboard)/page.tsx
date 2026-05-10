@@ -19,6 +19,11 @@ import {
 } from "@/lib/feederHistory";
 import toast from "react-hot-toast";
 import { useLang } from "@/lib/i18n";
+import {
+  pickNextFeeding,
+  formatMealClock,
+  type ScheduleTimesInput,
+} from "@/lib/nextMeal";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 
 function CircleGauge({
@@ -80,12 +85,14 @@ function CircleGauge({
 }
 
 export default function HomePage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [foodLevel, setFoodLevel] = useState<number>(65);
   const [feeding, setFeeding] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [lastFed, setLastFed] = useState<string | null>(null);
-  const [nextMeal] = useState("5:00 PM");
+  const [scheduleSlots, setScheduleSlots] = useState<ScheduleTimesInput[]>([]);
+  /** Рендерыг минут бүр сэргээж, дараагийн хоолны цаг зөв солигдоно */
+  const [clockTick, setClockTick] = useState(0);
   const [recentActivity, setRecentActivity] = useState<
     {
       id: string;
@@ -116,6 +123,40 @@ export default function HomePage() {
     ];
     return () => unsubs.forEach((u) => u());
   }, []);
+
+  useEffect(() => {
+    const u = onValue(ref(firebaseDb, "feeder/schedules_app"), (snap) => {
+      const val = (snap.val() ?? {}) as Record<
+        string,
+        { hour?: unknown; minute?: unknown; enabled?: unknown }
+      >;
+      setScheduleSlots(
+        Object.values(val).map((v) => ({
+          hour: Number(v.hour),
+          minute: Number(v.minute),
+          enabled: v.enabled !== false,
+        })),
+      );
+    });
+    return () => u();
+  }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setClockTick((n) => n + 1);
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  let nextMealLine = t.nextMealNone;
+  {
+    void clockTick;
+    const next = pickNextFeeding(scheduleSlots);
+    if (next) {
+      const time = formatMealClock(next.hour, next.minute, lang);
+      nextMealLine = next.isTomorrow ? t.nextMealTomorrow(time) : time;
+    }
+  }
 
   // Firebase түүх
   useEffect(() => {
@@ -257,7 +298,7 @@ export default function HomePage() {
           <p className="text-[10px] text-gray-400 uppercase tracking-widest">
             {t.nextMeal}
           </p>
-          <p className="text-lg font-bold text-gray-800">{nextMeal}</p>
+          <p className="text-lg font-bold text-gray-800">{nextMealLine}</p>
         </div>
       </div>
 

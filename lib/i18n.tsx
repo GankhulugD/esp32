@@ -26,6 +26,10 @@ type Dict = {
   remaining: string;
   daysLeft: (days: number) => string;
   nextMeal: string;
+  /** Идэвхтэй цаг алга */
+  nextMealNone: string;
+  /** formatted time string */
+  nextMealTomorrow: (time: string) => string;
   deviceHealth: string;
   wifiStrength: string;
   wifiStrong: string;
@@ -132,6 +136,8 @@ const en: Dict = {
   remaining: "REMAINING",
   daysLeft: (days) => `Approx. ${days} days left`,
   nextMeal: "NEXT MEAL",
+  nextMealNone: "Add a feeding time in Schedule",
+  nextMealTomorrow: (time) => `${time} · tomorrow`,
   deviceHealth: "Device Health",
   wifiStrength: "WiFi Strength",
   wifiStrong: "Strong",
@@ -235,6 +241,8 @@ const mn: Dict = {
   remaining: "ҮЛДСЭН",
   daysLeft: (days) => `Ойролцоогоор ${days} хоног үлдсэн`,
   nextMeal: "ДАРААГИЙН ХООЛ",
+  nextMealNone: "Schedule цэсэд цаг нэмнэ үү",
+  nextMealTomorrow: (time) => `${time} · маргааш`,
   deviceHealth: "Төхөөрөмжийн төлөв",
   wifiStrength: "WiFi хүч",
   wifiStrong: "Сайн",
